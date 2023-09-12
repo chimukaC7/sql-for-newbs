@@ -1,0 +1,220 @@
+COUNT
+-how many items meet the condition that has been set
+
+
+GROUP BY
+-for each
+-
+
+-which rating do we have the most films in?
+-films by rating
+
+SELECT
+	rating,count(film_id)
+FROM
+	films
+
+GROUP BY
+	1
+;
+
+
+-films by rating & rental price
+
+SELECT
+	rating,rental_rate,count(film_id)
+FROM
+	films
+
+GROUP BY
+	1,2
+;
+
+
+
+-which rating is most prevalent in each store?
+
+
+-how many times has each movie been rented out?
+-what is driving the revenue, wat is the most popular thing
+SELECT
+	f,title,count(r.rental_id)
+FROM
+	films f, rental r, inventory i
+WHERE
+	f.film_id = i.film_id
+	AND
+	i.inventory_id = r.inventory
+GROUP BY
+	1
+	
+	
+-finding your best selling products(rental count by movie)
+-revenue per video title
+-revenue = price * number of rentals
+SELECT
+	f,title as "Film Title",count(r.rental_id) as "Number of Rentals",f.rental_rate as "Rental Price",count(r.rental_id) * f.rental_rate as revenue
+FROM
+	films f, rental r, inventory i
+WHERE
+	f.film_id = i.film_id
+	AND
+	i.inventory_id = r.inventory
+GROUP BY
+	1
+ORDER BY
+	4 DESC
+
+
+
+SUM(adding up compared to how many times)
+
+-what customer has paid us the most money
+
+SELECT
+	p.customer_id, SUM(p.amount)
+FROM
+	payment p
+GROUP BY
+	1
+ORDER BY
+	2 DESC
+	
+	
+-what store has historically brought the most revenue?
+-findinf your top performing store
+-revenue by store
+
+SELECT
+	i.store_id as "Store ID", SUM(p.amount) as Revenue
+FROM
+	inventory i, payment p, rental r
+WHERE
+	p.rental_id = r.rental_id
+	AND
+	r.inventory_id = i.inventory_id
+GROUP BY
+	1
+ORDER BY
+	2 DESC
+	
+	
+LEFT MIN and MAX
+
+LEFT()
+-
+
+-how many rentals we had each month
+SELECT 
+	LEFT(r.rental_date,7), COUNT(r.rental_id)
+FROM
+	rental r
+GROUP BY
+	1
+ORDER BY
+	2 DESC
+	
+	
+SELECT 
+	f.title as "Film Title", max(r.rental_date) as "Last Rental Date", min(r.rental_date) as "First Rental Date"
+FROM
+	rental r, inventory i, film f
+WHERE
+	r.inventory_id = i.inventory_id
+	AND
+	i.film_id = f.film_id
+GROUP BY
+	f.film
+
+
+-customers who have been inactive
+-what customers haven't rented a movie in the last month
+
+1.Every customer's last rental date
+SELECT
+	CONCAT(c.firstname, " ", c.lastname) as Name, c.email as Email, max(r.rental_date) as last_rental_date
+FROM
+	customer c, rental r
+WHERE
+	r.customer_id = c.customer_id
+GROUP BY
+	c.customer_id
+
+2.Revenue by each month
+
+SELECT
+	LEFT(p.payment_date,7) as Month, SUM(p.amount) As Monthly_Revenue
+FROM
+	payment p
+GROUP BY
+	1
+	
+
+DISTINCT
+-to avoid double counting your items
+
+-How many distinct renters per month
+
+SELECT
+	LEFT(r.rental_date, 7) as Month, COUNT(r.rental_id) as Total_Rentals,
+	COUNT(DISTINCT r.customer_id) as unique_renters,
+	COUNT(r.rental_id)/COUNT(DISTINCT r.customer_id) as avg_num_rentals_per_renter
+FROM
+	rental r
+WHERE
+GROUP BY
+	1
+	
+	
+-the number of distinct films rented each month
+-find distinct films rented each month
+
+SELECT
+	LEFT(r.rental_date,7) as Month, COUNT(r.rental_id) as total_rentals,
+	COUNT(distinct i.film_id) as Unique_films_rented,
+	COUNT(r.rental_id)/COUNT(distinct i.film_id) as Rentals_per_film
+FROM
+	rental r, inventory i
+WHERE
+	r.inventory_id = i.inventory_id
+GROUP BY
+	1
+	
+	
+IN(),comparison operators, HAVING
+
+IN
+-a list of condition
+
+-the number of rentals in certain categories(Comedy, Sports and Family)
+
+SELECT
+	c.name as Category, count(r.rental_id) as Num_rentals
+FROM
+	rental r, inventory i, film f, film_category fc, category c
+WHERE
+	r.inventory_id = i.inventory_id
+	AND 
+	i.film_id = f.film_id
+	AND
+	f.film_id = fc.film_id
+	AND
+	fc.category_id = c.category_id
+	AND
+	c.name in ("Comedy","Sports","Family")
+GROUP BY
+	1
+	
+HAVING
+-filtering the result
+-instead of using an aggregate function in the where clause, you can use in having
+
+
+SELECT
+	r.customer_id as Customer, COUNT(r.rental_id) as Num_rentals
+FROM
+	rental r
+GROUP BY
+	1
+HAVING 
+	COUNT(r.rental_id) >= 3
