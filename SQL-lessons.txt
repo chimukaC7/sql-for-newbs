@@ -218,3 +218,115 @@ GROUP BY
 	1
 HAVING 
 	COUNT(r.rental_id) >= 3
+	
+	
+	
+Breaking  down revenue by store and rating
+-how much revenue has one single store made over PG-13 and R-Rated Films
+
+
+SELECT
+	i.store_id as Store, f.rating as Movie_Rating, SUM(p.amount) as Store_Revenue
+FROM
+	film f, payment p, inventory i, rental r
+WHERE
+	p.rental_id = r.rental_id
+	AND
+	r.inventory_id = i.inventory_id
+	AND
+	i.film_id = f.film_id
+	AND
+	i.store = 1
+	AND
+	f.rating in ("R", "PG-13")
+GROUP BY
+	1,2
+ORDER BY 3 desc
+
+
+
+Nested Queries
+-more creating a table then use the results of that table to get what you want
+
+-rentals per customer
+SELECT
+	rpc.num_rentals,
+	COUNT(DISTINCT rpc.customer_id) as num_customers,
+	SUM(p.amount) as total_revenue
+FROM
+	(SELECT 
+		r.customer_id, 
+		COUNT(distinct r.rental_id) as num_rentals
+	FROM
+		rental r
+	GROUP BY
+		1
+	) AS rental_per_customer rpc,
+	payment p
+WHERE
+	rpc.customer_id = p.customer_id
+	AND
+	rpc.num_rentals > 20
+GROUP BY
+	1
+	
+	
+Temporary Tables
+-using "temporary tables" instead of nested queries.  Often times, temporary tables won’t work on various SQL environments 
+-it has some benefits (namely, that it makes your queries more organized and easy-to-read for other people who might see your query
+
+CREATE temporary table as rpc as
+SELECT 
+	r.customer_id, 
+	COUNT(distinct r.rental_id) as num_rentals
+FROM
+	rental r
+GROUP BY
+	1
+	
+SELECT
+	rpc.num_rentals,
+	COUNT(DISTINCT rpc.customer_id) as num_customers,
+	SUM(p.amount) as total_revenue
+FROM
+	rpc,
+	payment p
+WHERE
+	rpc.customer_id = p.customer_id
+	AND
+	rpc.num_rentals > 20
+GROUP BY
+	1
+	
+	
+JOINS
+
+
+-create a temporary table activeUsers
+SELECT
+	c.*, --returns all columns in customer table
+	a.phone
+FROM
+	customer c
+JOIN
+	address a ON a.address_id = c.address_id
+WHERE
+	c.active = 1
+GROUP BY
+	1
+	
+	
+-at least 30 rentals
+-cusomer_id, number of rentals and last rental date
+
+-create temporary table rewardUsers
+SELECT
+	r.cusomer_id,
+	COUNT(r.rental_id) as num_rentals,
+	MAX(rental_date)
+FROM
+	rentals r
+GROUP BY
+	1
+HAVING 
+	num_rentals >= 30
